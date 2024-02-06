@@ -67,7 +67,7 @@ function playGame() {
 
   if (settings.start) {
     settings.score += settings.speed;
-    score.innerHTML = 'скоре хере:<br>' + settings.score;
+    score.innerHTML = 'Your score:<br>' + settings.score;
     moveRoad();
     enemyRide();
     if (keys.ArrowLeft && settings.x > 0) {
