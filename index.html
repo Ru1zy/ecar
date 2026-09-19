@@ -1,17 +1,149 @@
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>e-caR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0f18">
+  <title>e-caR — Neon Highway Arcade</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="score"></div>
-  <div class="game">
-    <div class="start">Click here to start the game</div>
-    <div class="gamearea"></div>
+  <div class="cyber-bg">
+    <div class="grid-lines"></div>
+    <div class="sun-glow"></div>
   </div>
+
+  <div class="arcade-wrapper">
+    <!-- Top HUD Bar -->
+    <header class="hud-bar">
+      <div class="hud-metric">
+        <span class="hud-label">СЧЕТ</span>
+        <span class="hud-value" id="currentScore">0</span>
+      </div>
+      <div class="hud-metric">
+        <span class="hud-label">РЕКОРД</span>
+        <span class="hud-value hud-accent" id="highScore">0</span>
+      </div>
+      <div class="hud-metric">
+        <span class="hud-label">СКОРОСТЬ</span>
+        <span class="hud-value hud-speed" id="speedMeter">80 <small>км/ч</small></span>
+      </div>
+      <div class="hud-actions">
+        <button id="soundToggle" class="icon-btn" title="Вкл/Выкл Звук" aria-label="Звук">
+          <svg id="soundIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Game Track Area -->
+    <main class="game-container">
+      <div class="road-track" id="roadTrack">
+        <div class="curb curb-left"></div>
+        <div class="curb curb-right"></div>
+        <div class="lanes-container" id="lanesContainer"></div>
+        <div class="traffic-container" id="trafficContainer"></div>
+        <div class="particles-layer" id="particlesLayer"></div>
+      </div>
+
+      <!-- Start / Menu Overlay -->
+      <div class="screen-overlay" id="startScreen">
+        <div class="overlay-card">
+          <div class="cyber-badge">ARCADE RACER 2026</div>
+          <h1 class="game-title">e-caR<span class="title-sub">NEON HIGHWAY</span></h1>
+          <p class="game-instructions">
+            Уворачивайся от трафика на неоновом шоссе. Чем выше скорость, тем больше множитель очков!
+          </p>
+
+          <div class="controls-hint">
+            <div class="hint-col">
+              <span class="key-badge">W / ↑</span> Газ
+            </div>
+            <div class="hint-col">
+              <span class="key-badge">A / ←</span> Влево
+            </div>
+            <div class="hint-col">
+              <span class="key-badge">D / →</span> Вправо
+            </div>
+            <div class="hint-col">
+              <span class="key-badge">S / ↓</span> Тормоз
+            </div>
+          </div>
+
+          <div class="mode-select">
+            <button class="mode-btn active" data-difficulty="normal">Стандарт</button>
+            <button class="mode-btn" data-difficulty="turbo">Турбо-раш</button>
+          </div>
+
+          <button id="startBtn" class="btn-neon-start">ПОГНАЛИ!</button>
+        </div>
+      </div>
+
+      <!-- Game Over Modal -->
+      <div class="screen-overlay hide" id="gameOverScreen">
+        <div class="overlay-card gameover-card">
+          <div class="crash-badge">💥 АВАРИЯ!</div>
+          <h2 class="gameover-title">ЗАЕЗД ОКОНЧЕН</h2>
+          
+          <div class="stats-summary">
+            <div class="summary-box">
+              <span class="summary-label">Набрано очков</span>
+              <span class="summary-val" id="finalScore">0</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Лучший рекорд</span>
+              <span class="summary-val" id="finalHighScore">0</span>
+            </div>
+          </div>
+
+          <div id="newRecordNotice" class="new-record hide">🏆 НОВЫЙ РЕКОРД ТРАССЫ!</div>
+
+          <div class="modal-buttons">
+            <button id="restartBtn" class="btn-neon-start">ПОВТОРИТЬ ЗАЕЗД</button>
+            <a href="https://ru1zy.github.io/" class="btn-neon-exit">В ПОРТФОЛИО</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Mobile Virtual Touch D-Pad Controls -->
+    <nav class="touch-controls" id="touchControls" aria-label="Управление">
+      <div class="dpad-left">
+        <button class="touch-btn" id="btnLeft" data-key="ArrowLeft" aria-label="Влево">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button class="touch-btn" id="btnRight" data-key="ArrowRight" aria-label="Вправо">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div class="dpad-right">
+        <button class="touch-btn touch-brake" id="btnDown" data-key="ArrowDown" aria-label="Тормоз">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <button class="touch-btn touch-gas" id="btnUp" data-key="ArrowUp" aria-label="Газ">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+
   <script src="./script.js"></script>
 </body>
 </html>
