@@ -22,6 +22,7 @@
   const gameOverScreen = document.getElementById('gameOverScreen');
   const startBtn = document.getElementById('startBtn');
   const restartBtn = document.getElementById('restartBtn');
+  const menuBtn = document.getElementById('menuBtn');
   const finalScoreEl = document.getElementById('finalScore');
   const finalHighScoreEl = document.getElementById('finalHighScore');
   const newRecordNotice = document.getElementById('newRecordNotice');
@@ -130,8 +131,8 @@
     topSpeed: 16,
     x: 0,
     y: 0,
-    playerWidth: 50,
-    playerHeight: 96,
+    playerWidth: 46,
+    playerHeight: 94,
     lastFrameTime: 0,
     nearMissCooldown: false
   };
@@ -191,7 +192,9 @@
       initAudioContext();
       keys[mappedKey] = true;
       btn.classList.add('active');
-      if (navigator.vibrate) navigator.vibrate(12);
+      if (navigator.vibrate) {
+        try { navigator.vibrate(10); } catch (err) {}
+      }
     };
 
     const release = (e) => {
@@ -200,20 +203,34 @@
       btn.classList.remove('active');
     };
 
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
     btn.addEventListener('touchstart', press, { passive: false });
     btn.addEventListener('touchend', release, { passive: false });
     btn.addEventListener('touchcancel', release, { passive: false });
-    btn.addEventListener('mousedown', press);
-    btn.addEventListener('mouseup', release);
-    btn.addEventListener('mouseleave', release);
   });
 
-  // Difficulty selection
-  modeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      modeButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      difficulty = btn.getAttribute('data-difficulty');
+  // Difficulty selection synchronized across startScreen and gameOverScreen
+  function updateDifficulty(newDiff) {
+    difficulty = newDiff;
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      if (btn.getAttribute('data-difficulty') === newDiff) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const diff = btn.getAttribute('data-difficulty');
+      if (diff) {
+        updateDifficulty(diff);
+      }
     });
   });
 
@@ -370,11 +387,13 @@
     playCrashSound();
     spawnSparks(state.x + state.playerWidth / 2, state.y + state.playerHeight / 2);
 
-    finalScoreEl.textContent = Math.floor(state.score).toLocaleString();
+    const finalScore = Math.floor(state.score);
+    finalScoreEl.textContent = finalScore.toLocaleString();
     
+    const previousHighScore = parseInt(localStorage.getItem('ecar_highscore') || '0', 10);
     let isNewRecord = false;
-    if (state.score > highScore) {
-      highScore = Math.floor(state.score);
+    if (finalScore > previousHighScore && finalScore > 0) {
+      highScore = finalScore;
       localStorage.setItem('ecar_highscore', highScore);
       highScoreEl.textContent = highScore.toLocaleString();
       isNewRecord = true;
@@ -383,6 +402,8 @@
 
     if (isNewRecord) {
       newRecordNotice.classList.remove('hide');
+    } else {
+      newRecordNotice.classList.add('hide');
     }
 
     setTimeout(() => {
@@ -392,6 +413,12 @@
 
   function gameLoop(timestamp) {
     if (!state.active) return;
+
+    const now = timestamp || performance.now();
+    const deltaMs = state.lastFrameTime ? (now - state.lastFrameTime) : 16.667;
+    state.lastFrameTime = now;
+    // Normalize to 60 FPS baseline (16.667ms per frame). Clamp between 0.2 and 2.5
+    const dt = Math.min(2.5, Math.max(0.2, deltaMs / 16.667));
 
     // Progressive speed scaling
     state.currentSpeed = Math.min(state.topSpeed, state.baseSpeed + state.score / 1500);
@@ -408,8 +435,8 @@
       playerCar.style.filter = 'drop-shadow(0 0 12px rgba(6, 182, 212, 0.7))';
     }
 
-    // Steering Physics
-    const steerSpeed = 6.5;
+    // Steering Physics with dt
+    const steerSpeed = 6.5 * dt;
     let tilt = 0;
     if (keys.ArrowLeft) {
       state.x -= steerSpeed;
@@ -430,29 +457,29 @@
       state.x = trackWidth - state.playerWidth - curbMargin;
     }
 
-    // Vertical Movement
+    // Vertical Movement with dt
     if (keys.ArrowUp && state.y > 40) {
-      state.y -= 2.5;
+      state.y -= 2.5 * dt;
     }
     if (keys.ArrowDown && state.y < trackHeight - state.playerHeight - 20) {
-      state.y += 3.5;
+      state.y += 3.5 * dt;
     }
 
     playerCar.style.transform = `rotate(${tilt}deg)`;
     playerCar.style.left = `${state.x}px`;
     playerCar.style.top = `${state.y}px`;
 
-    // Move Road Dividers
+    // Move Road Dividers with dt
     const dividerSpacing = 70;
     roadDividers.forEach(div => {
-      div.y += effectiveSpeed;
+      div.y += effectiveSpeed * dt;
       if (div.y >= trackHeight) {
         div.y -= (roadDividers.length / 2) * dividerSpacing;
       }
       div.style.top = `${div.y}px`;
     });
 
-    // Move & Collide Enemy Cars
+    // Move & Collide Enemy Cars with dt
     const pBox = {
       left: state.x + 4,
       right: state.x + state.playerWidth - 4,
@@ -462,7 +489,7 @@
 
     for (let i = 0; i < enemyCars.length; i++) {
       const enemy = enemyCars[i];
-      enemy.y += effectiveSpeed * 0.55;
+      enemy.y += effectiveSpeed * 0.55 * dt;
       enemy.style.top = `${enemy.y}px`;
 
       const eBox = {
@@ -500,9 +527,9 @@
       }
     }
 
-    // Score & HUD Update
-    state.score += Math.floor(effectiveSpeed * 0.8);
-    currentScoreEl.textContent = state.score.toLocaleString();
+    // Score & HUD Update with dt
+    state.score += effectiveSpeed * 0.8 * dt;
+    currentScoreEl.textContent = Math.floor(state.score).toLocaleString();
     speedMeterEl.innerHTML = `${Math.floor(effectiveSpeed * 14)} <small>км/ч</small>`;
 
     requestAnimationFrame(gameLoop);
@@ -511,6 +538,12 @@
   // Event Listeners
   startBtn.addEventListener('click', startGame);
   restartBtn.addEventListener('click', startGame);
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+      gameOverScreen.classList.add('hide');
+      startScreen.classList.remove('hide');
+    });
+  }
 
   // Responsive track resize
   window.addEventListener('resize', () => {

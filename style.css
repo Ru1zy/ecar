@@ -225,9 +225,9 @@ html, body {
 /* Cars (Player & Enemy) */
 .car {
   position: absolute;
-  width: 52px;
+  width: 48px;
   height: 98px;
-  background: transparent url('./img/player.png') center / contain no-repeat;
+  background: transparent url('./img/player.png') center / auto 100% no-repeat;
   z-index: 10;
   transition: transform 0.08s ease;
   filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.7));
@@ -315,9 +315,14 @@ html, body {
   transition: opacity 0.3s ease;
 }
 
+.hide {
+  display: none !important;
+}
+
 .screen-overlay.hide {
   opacity: 0;
   pointer-events: none;
+  display: none;
 }
 
 .overlay-card {
@@ -522,11 +527,36 @@ html, body {
   to { transform: scale(1.04); box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); }
 }
 
+.modal-mode-select {
+  margin-bottom: 1rem;
+}
+
 .modal-buttons {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   width: 100%;
+}
+
+.btn-neon-menu {
+  width: 100%;
+  padding: 0.65rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-neon-menu:hover {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: var(--neon-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
 }
 
 .btn-neon-exit {
